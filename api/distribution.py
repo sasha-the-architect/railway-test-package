@@ -97,6 +97,11 @@ class TreasuryBalanceResponse(BaseModel):
     transactions: int
 
 
+class DistributionExecuteRequest(BaseModel):
+    """Request to execute distribution for an epoch."""
+    epoch_id: str = Field(..., description="Epoch to distribute")
+
+
 # =============================================================================
 # Helper Functions
 # =============================================================================
