@@ -12,6 +12,7 @@ Tables:
 - audit_logs: Security audit trail
 """
 
+import logging
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
@@ -24,6 +25,9 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
+
+logger = logging.getLogger(__name__)
 
 
 Base = declarative_base()
