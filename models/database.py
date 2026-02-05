@@ -350,27 +350,43 @@ class AuditLog(Base):
 # Database Initialization
 # =============================================================================
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from config import settings
 
 
-engine = create_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_recycle=3600
-)
+# Create engine with error handling
+try:
+    engine = create_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        pool_recycle=3600
+    )
+except Exception as e:
+    logger.warning(f"Database engine creation failed: {e}")
+    engine = None
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = None
+if engine:
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db():
     """Initialize database tables."""
-    Base.metadata.create_all(bind=engine)
+    if engine:
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables initialized successfully")
+        except Exception as e:
+            logger.warning(f"Database initialization failed: {e}")
+    else:
+        logger.warning("Database engine not available, skipping initialization")
 
 
 def get_db():
     """Get database session dependency."""
+    if SessionLocal is None:
+        raise Exception("Database not configured")
     db = SessionLocal()
     try:
         yield db

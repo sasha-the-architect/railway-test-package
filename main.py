@@ -85,13 +85,12 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("NEO Controller starting up...")
     
+    # Initialize database tables (optional - may fail if no DB)
     try:
-        # Initialize database tables
         init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
-        raise
+        logger.warning(f"Database initialization skipped: {e}")
     
     # Initialize tamper detection engine
     try:
@@ -187,16 +186,18 @@ async def health_check():
     
     Returns system status, version, and connectivity information.
     """
-    db_status = "healthy"
+    db_status = "not_configured"
     btc_status = None
     
     # Check database connection
-    try:
-        db = SessionLocal()
-        db.execute(text("SELECT 1"))
-        db.close()
-    except Exception as e:
-        db_status = f"unhealthy: {e}"
+    if SessionLocal is not None:
+        try:
+            db = SessionLocal()
+            db.execute(text("SELECT 1"))
+            db.close()
+            db_status = "healthy"
+        except Exception as e:
+            db_status = f"unhealthy: {e}"
     
     # Check Bitcoin RPC connection (if configured)
     if settings.bitcoin_rpc_url:
@@ -207,8 +208,10 @@ async def health_check():
         except Exception as e:
             btc_status = f"error: {e}"
     
+    overall_status = "healthy" if db_status == "healthy" else ("degraded" if db_status == "not_configured" else "unhealthy")
+    
     return HealthResponse(
-        status="healthy" if db_status == "healthy" else "degraded",
+        status=overall_status,
         timestamp=datetime.utcnow(),
         version=settings.version,
         database=db_status,
