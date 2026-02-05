@@ -360,31 +360,33 @@ from config import settings
 
 
 # Create engine with error handling
+engine = None
+SessionLocal = None
 try:
-    engine = create_engine(
-        settings.database_url,
-        pool_pre_ping=True,
-        pool_recycle=3600
-    )
+    if settings.database_url and "localhost" not in settings.database_url:
+        engine = create_engine(
+            settings.database_url,
+            pool_pre_ping=True,
+            pool_recycle=3600
+        )
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        logger.info("Database engine created successfully")
+    else:
+        logger.warning("Database URL not configured or using localhost - skipping database initialization")
 except Exception as e:
     logger.warning(f"Database engine creation failed: {e}")
-    engine = None
-
-SessionLocal = None
-if engine:
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db():
     """Initialize database tables."""
-    if engine:
+    if engine and SessionLocal:
         try:
             Base.metadata.create_all(bind=engine)
             logger.info("Database tables initialized successfully")
         except Exception as e:
             logger.warning(f"Database initialization failed: {e}")
     else:
-        logger.warning("Database engine not available, skipping initialization")
+        logger.info("Database not available - running in database-less mode")
 
 
 def get_db():
