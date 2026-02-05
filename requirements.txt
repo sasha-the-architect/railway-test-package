@@ -18,7 +18,7 @@ python-dotenv==1.0.0
 
 # Bitcoin RPC (optional - for real BTC operations)
 python-bitcoinlib==0.12.0
-bitcoinrpc==0.0.1
+bitcoinrpc==0.7.0
 
 # Security
 cryptography==42.0.0
